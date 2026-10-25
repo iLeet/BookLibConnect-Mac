@@ -10,6 +10,10 @@ A native macOS port of [Book Lib Connect](https://github.com/audiamus/BookLibCon
 
 Requires macOS 26 (Tahoe) or later — developed on macOS 27.
 
+## Download
+
+Grab the latest `Book-Lib-Connect-*.zip` from the [Releases](../../releases) page, unzip, and drag **Book Lib Connect** to Applications. The app is ad-hoc signed, not notarized: on first launch right-click → Open, or run `xattr -cr "/Applications/Book Lib Connect.app"`.
+
 ## Build
 
 ```bash
@@ -32,6 +36,16 @@ Try the interface without an account: `BLC_DEMO=1 "build/Book Lib Connect.app/Co
 | Online updater, Windows installer | not ported; build from source |
 
 The original C# sources are kept under [`legacy-windows/`](legacy-windows) for reference.
+
+## Where data is stored
+
+- Profiles: `~/Library/Application Support/BookLibConnect-Mac/config/Configuration.json` (encrypted), key in the Keychain item `com.booklibconnect.mac.config`
+- Library database and covers: `~/Library/Application Support/BookLibConnect-Mac/`
+- Settings: `defaults` domain `com.github.ileet.BookLibConnect-Mac`
+
+## Roadmap
+
+See [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ## Layout
 
