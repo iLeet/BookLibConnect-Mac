@@ -87,7 +87,7 @@ struct LibraryView: View {
                 .frame(height: 190)
         }
         .padding(18)
-        .frame(minWidth: 980, idealWidth: 1040, minHeight: 700, idealHeight: 760)
+        .frame(minWidth: 1060, idealWidth: 1120, minHeight: 700, idealHeight: 760)
         .background(BrandBackdrop())
         .onChange(of: model.queuedBooks) { _, _ in }
     }

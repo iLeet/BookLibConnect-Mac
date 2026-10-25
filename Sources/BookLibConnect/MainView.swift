@@ -64,10 +64,11 @@ private struct SettingsRow: View {
     var body: some View {
         GlassEffectContainer(spacing: 16) {
             HStack(alignment: .top, spacing: 14) {
-                ProfilePanel().frame(width: 190)
-                DownloadPanel()
-                ExportPanel().frame(width: 210)
+                ProfilePanel().frame(width: 190).frame(maxHeight: .infinity)
+                DownloadPanel().frame(maxHeight: .infinity)
+                ExportPanel().frame(width: 210).frame(maxHeight: .infinity)
             }
+            .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

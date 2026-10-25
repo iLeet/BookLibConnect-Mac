@@ -9,7 +9,6 @@ struct BookLibConnectApp: App {
         WindowGroup("Book Lib Connect", id: "main") {
             MainView()
                 .environment(model)
-                .tint(.brand)
                 .task { await SnapshotHook.run(model: model) }
         }
         .defaultSize(width: 1040, height: 700)

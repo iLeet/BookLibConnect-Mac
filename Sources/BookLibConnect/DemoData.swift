@@ -142,5 +142,11 @@ enum Demo {
         s.profileAlias = account.alias
         s.profileRegion = .us
         model.addToQueue(["B000DEMO01", "B000DEMO02", "B000DEMO04"])
+        switch ProcessInfo.processInfo.environment["BLC_OPEN"] {
+        case "library": model.showLibrary = true
+        case "profiles": model.showProfiles = true
+        case "wizard": model.showWizard = true
+        default: break
+        }
     }
 }
