@@ -89,7 +89,7 @@ struct LibraryView: View {
         .padding(18)
         .frame(minWidth: 1060, idealWidth: 1120, minHeight: 700, idealHeight: 760)
         .background(BrandBackdrop())
-        .onChange(of: model.queuedBooks) { _, _ in }
+        .onAppear { if let a = model.libraryPreselect { selection = [a] } }
     }
 
     private var toolbar: some View {

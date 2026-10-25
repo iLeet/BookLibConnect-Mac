@@ -1,5 +1,19 @@
 # Book Lib Connect for Mac
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/main-dark.png">
+    <img src="docs/screenshots/main-light.png" alt="Main window" width="760">
+  </picture>
+</p>
+
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/library-dark.png">
+    <img src="docs/screenshots/library-light.png" alt="Library window" width="760">
+  </picture>
+</p>
+
 A native macOS port of [Book Lib Connect](https://github.com/audiamus/BookLibConnect) by audiamus — a standalone Audible downloader and decrypter. Same windows, same options, same workflow, rebuilt in SwiftUI with Liquid Glass.
 
 - Sign in through your regular browser to register a *device*; the app never sees your credentials.

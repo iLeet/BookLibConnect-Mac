@@ -66,6 +66,7 @@ final class AppModel {
     var showProfiles = false
     var showWizard = false
     var aliasRequest: AliasRequest?
+    var libraryPreselect: String?
     var initDone = false
     @ObservationIgnored private var libraryUpdated = false
     @ObservationIgnored private var fileCheckAnswered = false

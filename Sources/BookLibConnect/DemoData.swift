@@ -1,4 +1,5 @@
 import BookLibCore
+import AppKit
 import Foundation
 
 /// `BLC_DEMO=1` launches the app with a throw-away library of public-domain titles and no network
@@ -66,9 +67,46 @@ enum Demo {
               hours: 8.4, year: 2009, summary: "<p>A portrait ages while its subject does not.</p>"),
     ]
 
+    /// Generated placeholder cover (own artwork, no publisher imagery).
+    static func cover(title: String, author: String, hue: Double) -> Data? {
+        let size = NSSize(width: 500, height: 500)
+        let image = NSImage(size: size)
+        image.lockFocus()
+        NSGradient(colors: [
+            NSColor(hue: hue, saturation: 0.55, brightness: 0.55, alpha: 1),
+            NSColor(hue: hue + 0.06, saturation: 0.65, brightness: 0.85, alpha: 1),
+        ])!.draw(in: NSRect(origin: .zero, size: size), angle: -60)
+        NSColor.white.withAlphaComponent(0.85).setStroke()
+        let frame = NSBezierPath(rect: NSRect(x: 28, y: 28, width: 444, height: 444))
+        frame.lineWidth = 3
+        frame.stroke()
+        let para = NSMutableParagraphStyle()
+        para.alignment = .center
+        let titleAttrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont(name: "Georgia-Bold", size: 46) ?? NSFont.boldSystemFont(ofSize: 46),
+            .foregroundColor: NSColor.white, .paragraphStyle: para,
+        ]
+        let authorAttrs: [NSAttributedString.Key: Any] = [
+            .font: NSFont(name: "Georgia-Italic", size: 28) ?? NSFont.systemFont(ofSize: 28),
+            .foregroundColor: NSColor.white.withAlphaComponent(0.9), .paragraphStyle: para,
+        ]
+        (title.uppercased() as NSString).draw(in: NSRect(x: 50, y: 190, width: 400, height: 240), withAttributes: titleAttrs)
+        (author as NSString).draw(in: NSRect(x: 50, y: 70, width: 400, height: 60), withAttributes: authorAttrs)
+        image.unlockFocus()
+        guard let tiff = image.tiffRepresentation, let rep = NSBitmapImageRep(data: tiff) else { return nil }
+        return rep.representation(using: .jpeg, properties: [.compressionFactor: 0.85])
+    }
+
     @MainActor
     static func seed(_ model: AppModel) {
+        switch ProcessInfo.processInfo.environment["BLC_APPEARANCE"] {
+        case "light": NSApp.appearance = NSAppearance(named: .aqua)
+        case "dark": NSApp.appearance = NSAppearance(named: .darkAqua)
+        default: break
+        }
         let s = model.settings
+        s.multiPartDownload = true
+        s.autoUpdateLibrary = true
         s.downloadDirectory = directory().appendingPathComponent("Download").path
         s.exportDirectory = directory().appendingPathComponent("Export").path
         s.exportToAax = true
@@ -121,10 +159,10 @@ enum Demo {
                 for part in 1...t.parts {
                     model.store.mutate(ConversionRef(bookAsin: t.asin, unitAsin: "\(t.asin)P\(part)")) {
                         $0.state = t.state
-                        $0.fileSizeBytes = Int64(t.hours / Double(t.parts) * 13_000_000)
+                        $0.fileSizeBytes = part == 1 ? 165_000_000 : 182_000_000
                         $0.sampleRate = 22050
                         $0.bitRate = 64
-                        $0.runtimeSeconds = Int(t.hours * 3600 / Double(t.parts))
+                        $0.runtimeSeconds = part == 1 ? 21_484 : 23_660
                     }
                 }
             }
@@ -141,7 +179,15 @@ enum Demo {
         model.api = AudibleAPI(profile: profile)
         s.profileAlias = account.alias
         s.profileRegion = .us
-        model.addToQueue(["B000DEMO01", "B000DEMO02", "B000DEMO04"])
+        for (i, t) in titles.enumerated() {
+            let name = "\(t.asin).jpg"
+            if let data = cover(title: t.title, author: t.author, hue: Double(i) / Double(titles.count)) {
+                try? data.write(to: model.store.coverDirectory.appendingPathComponent(name))
+                model.store.setCoverFile(name, forBook: t.asin)
+            }
+        }
+        model.addToQueue(["B000DEMO01"])
+        model.libraryPreselect = "B000DEMO01"
         switch ProcessInfo.processInfo.environment["BLC_OPEN"] {
         case "library": model.showLibrary = true
         case "profiles": model.showProfiles = true
