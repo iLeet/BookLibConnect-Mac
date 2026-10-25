@@ -7,40 +7,74 @@ public protocol ConfigKeyProvider: Sendable {
     func key() throws -> SymmetricKey
 }
 
-/// Keeps a random 256-bit key in the macOS Keychain.
-public struct KeychainKeyProvider: ConfigKeyProvider {
-    private let service = "com.booklibconnect.mac.config"
-    private let account = "configuration-key"
+/// Keeps a random 256-bit key in the macOS login Keychain.
+///
+/// The item is created with an open access list. With the default list the Keychain only trusts the
+/// exact binary that created the item, and an app without a stable code-signing identity (a local
+/// or ad-hoc build, a new release) is asked for permission again and again. The key still lives in
+/// the login Keychain, so it is locked together with the user's session and stays out of the
+/// configuration file; it just isn't guarded against other programs running as the same user.
+public final class KeychainKeyProvider: ConfigKeyProvider, @unchecked Sendable {
+    private let service: String
+    private let legacyAccount = "configuration-key"
+    private let account = "configuration-key-open"
+    private let lock = NSLock()
+    private var cached: SymmetricKey?
 
-    public init() {}
+    public init(service: String = "com.booklibconnect.mac.config") { self.service = service }
 
     public func key() throws -> SymmetricKey {
-        let query: [String: Any] = [
-            kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
-            kSecReturnData as String: true,
-            kSecMatchLimit as String: kSecMatchLimitOne,
-        ]
-        var item: CFTypeRef?
-        let status = SecItemCopyMatching(query as CFDictionary, &item)
-        if status == errSecSuccess, let data = item as? Data {
-            return SymmetricKey(data: data)
-        }
-        guard status == errSecItemNotFound else { throw StoreError.keychain(status) }
+        lock.lock()
+        defer { lock.unlock() }
+        if let cached { return cached }
 
-        let fresh = SymmetricKey(size: .bits256)
-        let data = fresh.withUnsafeBytes { Data($0) }
-        let add: [String: Any] = [
+        let key: SymmetricKey
+        if let data = try read(account: account) {
+            key = SymmetricKey(data: data)
+        } else if let legacy = try read(account: legacyAccount) {
+            // Items from earlier builds carry the restrictive default access list; copy the key.
+            try add(legacy, account: account)
+            SecItemDelete(query(account: legacyAccount) as CFDictionary)
+            key = SymmetricKey(data: legacy)
+        } else {
+            let fresh = SymmetricKey(size: .bits256)
+            try add(fresh.withUnsafeBytes { Data($0) }, account: account)
+            key = fresh
+        }
+        cached = key
+        return key
+    }
+
+    private func query(account: String) -> [String: Any] {
+        [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
             kSecAttrAccount as String: account,
-            kSecValueData as String: data,
-            kSecAttrAccessible as String: kSecAttrAccessibleWhenUnlockedThisDeviceOnly,
         ]
-        let addStatus = SecItemAdd(add as CFDictionary, nil)
-        guard addStatus == errSecSuccess else { throw StoreError.keychain(addStatus) }
-        return fresh
+    }
+
+    private func read(account: String) throws -> Data? {
+        var q = query(account: account)
+        q[kSecReturnData as String] = true
+        q[kSecMatchLimit as String] = kSecMatchLimitOne
+        var item: CFTypeRef?
+        let status = SecItemCopyMatching(q as CFDictionary, &item)
+        if status == errSecItemNotFound { return nil }
+        guard status == errSecSuccess, let data = item as? Data else { throw StoreError.keychain(status) }
+        return data
+    }
+
+    private func add(_ data: Data, account: String) throws {
+        var access: SecAccess?
+        var q = query(account: account)
+        q[kSecValueData as String] = data
+        // trusted-application list of NULL: any application may use the item without a prompt
+        if SecAccessCreate("Book Lib Connect configuration key" as CFString, nil, &access) == errSecSuccess,
+           let access {
+            q[kSecAttrAccess as String] = access
+        }
+        let status = SecItemAdd(q as CFDictionary, nil)
+        guard status == errSecSuccess else { throw StoreError.keychain(status) }
     }
 }
 
