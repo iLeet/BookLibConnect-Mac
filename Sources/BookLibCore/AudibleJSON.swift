@@ -103,7 +103,7 @@ public struct Product: Codable, Sendable {
     public var format_type: String?
     public var relationships: [Relationship]?
     public var series: [SeriesRef]?
-    public var category_ladders: [Category]?
+    public var category_ladders: [ProductCategory]?
     public var available_codecs: [CodecRef]?
 
     public init() {}
@@ -143,7 +143,7 @@ public struct Product: Codable, Sendable {
         format_type = try? c.decodeIfPresent(String.self, forKey: .format_type)
         relationships = try? c.decodeIfPresent([Relationship].self, forKey: .relationships)
         series = try? c.decodeIfPresent([SeriesRef].self, forKey: .series)
-        category_ladders = try? c.decodeIfPresent([Category].self, forKey: .category_ladders)
+        category_ladders = try? c.decodeIfPresent([ProductCategory].self, forKey: .category_ladders)
         available_codecs = try? c.decodeIfPresent([CodecRef].self, forKey: .available_codecs)
     }
 }
@@ -176,6 +176,18 @@ public struct Relationship: Codable, Sendable {
     public var sort: String?
     public var title: String?
     public var url: String?
+
+    public init(
+        asin: String? = nil, relationship_to_product: String? = nil, relationship_type: String? = nil,
+        sequence: String? = nil, sort: String? = nil, title: String? = nil
+    ) {
+        self.asin = asin
+        self.relationship_to_product = relationship_to_product
+        self.relationship_type = relationship_type
+        self.sequence = sequence
+        self.sort = sort
+        self.title = title
+    }
 }
 
 public struct SeriesRef: Codable, Sendable {
@@ -185,14 +197,24 @@ public struct SeriesRef: Codable, Sendable {
     public var url: String?
 }
 
-public struct Category: Codable, Sendable {
+public struct ProductCategory: Codable, Sendable {
     public var ladder: [LadderRung]?
     public var root: String?
+
+    public init(ladder: [LadderRung]? = nil, root: String? = nil) {
+        self.ladder = ladder
+        self.root = root
+    }
 }
 
 public struct LadderRung: Codable, Sendable {
     public var id: String?
     public var name: String?
+
+    public init(id: String? = nil, name: String? = nil) {
+        self.id = id
+        self.name = name
+    }
 }
 
 public struct CodecRef: Codable, Sendable {

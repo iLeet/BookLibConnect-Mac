@@ -1,50 +1,53 @@
-# Book Lib Connect
-A standalone Audible downloader and decrypter
+# Book Lib Connect for Mac
 
-[![GitHub All Releases](https://img.shields.io/github/downloads/audiamus/BookLibConnect/total)](https://github.com/audiamus/BookLibConnect/releases) [![GitHub](https://img.shields.io/github/license/audiamus/BookLibConnect)](https://github.com/audiamus/BookLibConnect/blob/main/LICENSE) [![](https://img.shields.io/badge/platform-Windows-blue)](http://microsoft.com/windows) [![](https://img.shields.io/badge/language-C%23-blue)](http://csharp.net/) [![GitHub release (latest by date)](https://img.shields.io/github/v/release/audiamus/BookLibConnect)](https://github.com/audiamus/BookLibConnect/releases/latest)
+A native macOS port of [Book Lib Connect](https://github.com/audiamus/BookLibConnect) by audiamus — a standalone Audible downloader and decrypter. Same windows, same options, same workflow, rebuilt in SwiftUI with Liquid Glass.
 
-![](res/mainwnd.png?raw=true)
+- Sign in through your regular browser to register a *device*; the app never sees your credentials.
+- Lists your library and lets you pick titles to download.
+- Downloads and converts books to plain `.m4b` (chapters and tags included, ready for Apple Books).
+- Optionally exports `.aax` files plus chapter/product JSON for [AAX Audio Converter](https://github.com/audiamus/AaxAudioConverter).
+- Multi-part books, quality choice (Normal / High), profiles for several accounts and regions.
 
-![](res/libwnd.png?raw=true)
+Requires macOS 26 (Tahoe) or later — developed on macOS 27.
 
-Book Lib Connect is an Audible downloader app. It should be seen as temporary/preview project, because its features will become an integrated component in a future version of AAX Audio Converter.
+## Build
 
-_**Note:** Books downloaded with Book Lib Connect and exported for [AAX Audio Converter](https://github.com/audiamus/AaxAudioConverter) do not need a classic activation code. If AAX Audio Converter asks or one, any dummy code will do._ 
+```bash
+Scripts/build-app.sh            # release build -> build/Book Lib Connect.app
+UNIVERSAL=1 Scripts/build-app.sh   # arm64 + x86_64
+swift test                      # unit tests
+```
 
-## Features
-- **Free** and **Open Source** software. 
-- Direct download from the Audible server.
-- Sign-in via standard web browser to register a _device_, app will not see user’s credentials.
-- Lists your book library and lets you select titles for download.
-- Downloads your books and converts to plain .m4b files.
-- Detailed progress monitoring.
-- Optionally exports as .aax files for [AAX Audio Converter](https://github.com/audiamus/AaxAudioConverter) compatibility.
-- PDF user manual included.
+The app is ad-hoc signed. Set `SIGN_IDENTITY="Developer ID Application: …"` to sign for distribution.
+Try the interface without an account: `BLC_DEMO=1 "build/Book Lib Connect.app/Contents/MacOS/BookLibConnect"`.
 
+## What changed from the Windows version
 
-## Download
-Windows setup package version 0.13.1, English, with manual:
+| Windows (.NET 8 / WinForms) | macOS |
+| --- | --- |
+| AAXClean decryption | `AAXCRemuxer`: per-sample AES-128-CBC decryption and MP4 rewrite in Swift (CommonCrypto) |
+| EF Core / SQLite book database | JSON store in `~/Library/Application Support/BookLib­Connect-Mac` |
+| Config encrypted with CPU/board IDs | AES-GCM with a key in the macOS Keychain |
+| DataGridView, dialogs | SwiftUI `Table`, sheets, Liquid Glass panels |
+| Online updater, Windows installer | not ported; build from source |
 
-**[BookLibConnect-0.13.1-Setup.exe](https://github.com/audiamus/BookLibConnect/releases/download/v0.13.1/BookLibConnect-0.13.1-Setup.exe)**
+The original C# sources are kept under [`legacy-windows/`](legacy-windows) for reference.
 
-## Feedback
-Use the [Discussions](https://github.com/audiamus/BookLibConnect/discussions) and [Issues](https://github.com/audiamus/BookLibConnect/issues) sections. 
-Be cautious with uploading log files to these sections as they may contain sensitive data.   
+## Layout
 
-## Dependencies
-Book Lib Connect will run on Windows 64bit. Minimum Windows version is 7.
-The application requires .Net 6 64 bit to be installed. On Windows 10/11 systems this should normally be the case, if the system is kept up to date.
-If not, the app will prompt you for downloading .Net 6 and open the link in your default web browser. From the many options, pick 
-**.Net 6 Runtime x64 for _Windows desktop_**.
+- `Sources/BookLibCore` — Audible auth/signing, API client, library store, download, AAXC → m4b remuxer, AAX exporter.
+- `Sources/BookLibConnect` — the SwiftUI app.
+- `Tests/BookLibCoreTests` — signing, voucher, PKCE, and remuxer tests (including a bit-exact decode check through ffmpeg when installed).
+
+## Anti-piracy notice
+
+This software does not crack or circumvent DRM. It applies account- and book-specific keys, retrieved from the Audible server through your own account, to decrypt audiobooks the same way the official player does. Use it only for your own audiobooks, for archiving and convenience. De-DRMed audiobooks must not be uploaded or distributed. Authors, narrators and publishers need to make a living.
 
 ## Acknowledgments
-- [mkb79](https://github.com/mkb79/Audible) for his Python library which served as the reference implementation of the Audible API to me, straightforward and easy to follow. 
-- [Mbucari](https://github.com/Mbucari/AAXClean) for his Audible decryption library in C#. While recent FFmpeg releases can also do it, it is much more convenient to have an in-process solution.
-- [rmcrackan](https://github.com/rmcrackan/AudibleApi) for _the other_ C# implementation of an Audible client library, absolutely worth the occcasional side glance.
 
+- [audiamus](https://github.com/audiamus/BookLibConnect) for the original application and its design.
+- [mkb79](https://github.com/mkb79/Audible), [Mbucari](https://github.com/Mbucari/AAXClean) and [rmcrackan](https://github.com/rmcrackan/AudibleApi) for the reference implementations the original builds on.
 
-## Anti-Piracy Notice
-Note that this software does not ‘crack’ the DRM or circumvent it in any other way. The application applies account and book specific keys, retrieved directly from the Audible server via the user’s personal account, to decrypt the audiobook in the same manner as the official audiobook playing software does. 
-Please only use this application for gaining full access to your own audiobooks for archiving/conversion/convenience. De-DRMed audiobooks must not be uploaded to open servers, torrents, or other methods of mass distribution. No help will be given to people doing such things. Authors, retailers and publishers all need to make a living, so that they can continue to produce audiobooks for us to listen to and enjoy.
+## License
 
-(*This blurb is borrowed from https://github.com/KrumpetPirate/AAXtoMP3 and https://apprenticealf.wordpress.com/*). 
+GNU GPL v3, as the original — see [LICENSE](LICENSE).
